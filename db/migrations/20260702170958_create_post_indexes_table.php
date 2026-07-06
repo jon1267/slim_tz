@@ -28,21 +28,20 @@ final class CreatePostIndexesTable extends AbstractMigration
         $table
             ->addColumn('post_index', 'string', ['limit' => 10, 'null' => false])
             ->addColumn('region_ua', 'string', ['limit' => 20, 'null' => true])
-            ->addColumn('raion_old_ua', 'string', ['limit' => 20, 'null' => false])
-            ->addColumn('raion_new_ua', 'string', ['limit' => 20, 'null' => false])
-            ->addColumn('city', 'string', ['limit' => 150, 'null' => false])
-            ->addColumn('postal_code', 'string', ['limit' => 20, 'null' => false])
+            ->addColumn('raion_old_ua', 'string', ['limit' => 150, 'null' => true])
+            ->addColumn('raion_new_ua', 'string', ['limit' => 150, 'null' => true])
+            ->addColumn('city', 'string', ['limit' => 150, 'null' => true])
+            ->addColumn('postal_code', 'string', ['limit' => 10, 'null' => true])
 
-            ->addColumn('region_en', 'string', ['limit' => 150, 'null' => false])
+            ->addColumn('region_en', 'string', ['limit' => 150, 'null' => true])
             ->addColumn('raion_new_en', 'string', ['limit' => 150, 'null' => true])
             ->addColumn('settlement', 'string', ['limit' => 150, 'null' => true])
             ->addColumn('post_office_ua', 'string', ['limit' => 150, 'null' => true])
             ->addColumn('post_office_en', 'string', ['limit' => 150, 'null' => true])
 
-            ->addColumn('created_at', 'timestamp', [
-                'default' => 'CURRENT_TIMESTAMP',
-                'null' => false
-            ])
+            ->addColumn('is_manual', 'tinyinteger', ['default' => 0, 'null' => false])
+            ->addColumn('last_seen_at', 'string', ['limit' => 50, 'null' => true ])
+            ->addColumn('created_at', 'timestamp', ['default' => 'CURRENT_TIMESTAMP', 'null' => true ])
             ->create();
     }
 }

@@ -1,0 +1,411 @@
+openapi: 3.0.3
+info:
+  title: Postal Indexes API
+  description: API for getting, adding, and deleting postal codes.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+tags:
+  - name: PostIndexes
+    description: Operations with postal codes
+
+paths:
+  /api/post-indexes:
+    get:
+      tags:
+        - PostIndexes
+      summary: Get postal codes
+      description: >
+        Returns postal codes from the database.
+
+        If no parameters are specified — returns 50 records with pagination
+        and sorting by post_index in ascending order.
+
+        If post_index is specified — returns the found record.
+
+        If address is specified — returns up to 50 records found by address
+        or part of the address, sorted by address in ascending order.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Page number. Used if neither post_index nor address is specified.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: post_index
+          in: query
+          required: false
+          description: Postal code of the communication office for precise search.
+          schema:
+            type: string
+            example: "49000"
+        - name: address
+          in: query
+          required: false
+          description: Address or part of the address for search.
+          schema:
+            type: string
+            example: "Дніпро"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/PostIndexListResponse"
+                  - $ref: "#/components/schemas/PostIndexSingleResponse"
+              examples:
+                list:
+                  summary: List of postal codes
+                  value:
+                    statusCode: 200
+                    data:
+                      page: 1
+                      limit: 50
+                      items:
+                        - post_index: "49000"
+                          region_ua: "ДНІПРОПЕТРОВСЬКА"
+                          raion_old_ua: null
+                          raion_new_ua: null
+                          city: "ДНІПРО"
+                          postal_code: null
+                          region_en: "DNIPROPETROVSKA"
+                          raion_new_en: null
+                          settlement: "DNIPRO"
+                          post_office_ua: "ДНІПРО"
+                          post_office_en: "DNIPRO"
+                          is_manual: 0
+                          last_seen_at: "2026-07-05 12:00:00"
+                          created_at: "2026-07-05 12:00:00"
+                single:
+                  summary: One found record
+                  value:
+                    statusCode: 200
+                    data:
+                      post_index: "49000"
+                      region_ua: "ДНІПРОПЕТРОВСЬКА"
+                      raion_old_ua: null
+                      raion_new_ua: null
+                      city: "ДНІПРО"
+                      postal_code: null
+                      region_en: "DNIPROPETROVSKA"
+                      raion_new_en: null
+                      settlement: "DNIPRO"
+                      post_office_ua: "ДНІПРО"
+                      post_office_en: "DNIPRO"
+                      is_manual: 0
+                      last_seen_at: "2026-07-05 12:00:00"
+                      created_at: "2026-07-05 12:00:00"
+        "404":
+          description: Postal code not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                statusCode: 404
+                data:
+                  message: "Postal code not found"
+
+    post:
+      tags:
+        - PostIndexes
+      summary: Add postal codes
+      description: >
+        Adds one or more postal codes.
+
+        Records added via API are marked as manual: is_manual = 1.
+        Such records should not be deleted by the daily import.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/PostIndexCreateRequest"
+                - type: array
+                  items:
+                    $ref: "#/components/schemas/PostIndexCreateRequest"
+            examples:
+              single:
+                summary: Adding one postal code
+                value:
+                  post_index: "99999"
+                  region_ua: "ДНІПРОПЕТРОВСЬКА"
+                  city: "ДНІПРО"
+                  post_office_ua: "Відділення №1"
+              multiple:
+                summary: Adding multiple postal codes
+                value:
+                  - post_index: "99998"
+                    region_ua: "ДНІПРОПЕТРОВСЬКА"
+                    city: "ДНІПРО"
+                    post_office_ua: "Відділення №2"
+                  - post_index: "99997"
+                    region_ua: "КИЇВСЬКА"
+                    city: "КИЇВ"
+                    post_office_ua: "Відділення №3"
+      responses:
+        "201":
+          description: Postal codes successfully saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatePostIndexesResponse"
+              example:
+                statusCode: 201
+                data:
+                  message: "Postal codes successfully saved"
+                  count: 2
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                emptyBody:
+                  summary: Empty request body
+                  value:
+                    statusCode: 400
+                    data:
+                      message: "Empty request body"
+                missingPostIndex:
+                  summary: Post index is missing
+                  value:
+                    statusCode: 400
+                    data:
+                      message: "Post index is required"
+
+  /api/post-indexes/{post_index}:
+    delete:
+      tags:
+        - PostIndexes
+      summary: Remove postal code
+      description: Removes the postal code from the database by its post_index value.
+      parameters:
+        - name: post_index
+          in: path
+          required: true
+          description: The postal code to remove.
+          schema:
+            type: string
+            example: "99999"
+      responses:
+        "200":
+          description: Postal code successfully removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletePostIndexResponse"
+              example:
+                statusCode: 200
+                data:
+                  message: "Postal code successfully removed"
+                  post_index: "99999"
+        "404":
+          description: Postal code not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                statusCode: 404
+                data:
+                  message: "Postal code not found"
+
+components:
+  schemas:
+    PostIndex:
+      type: object
+      properties:
+        post_index:
+          type: string
+          description: Post office postcode. Unique record identifier.
+          example: "49000"
+        region_ua:
+          type: string
+          nullable: true
+          example: "ДНІПРОПЕТРОВСЬКА"
+        raion_old_ua:
+          type: string
+          nullable: true
+          example: null
+        raion_new_ua:
+          type: string
+          nullable: true
+          example: null
+        city:
+          type: string
+          nullable: true
+          example: "ДНІПРО"
+        postal_code:
+          type: string
+          nullable: true
+          example: null
+        region_en:
+          type: string
+          nullable: true
+          example: "DNIPROPETROVSKA"
+        raion_new_en:
+          type: string
+          nullable: true
+          example: null
+        settlement:
+          type: string
+          nullable: true
+          example: "DNIPRO"
+        post_office_ua:
+          type: string
+          nullable: true
+          example: "ДНІПРО"
+        post_office_en:
+          type: string
+          nullable: true
+          example: "DNIPRO"
+        is_manual:
+          type: integer
+          description: Flag indicating manual addition via API.
+          enum:
+            - 0
+            - 1
+          example: 0
+        last_seen_at:
+          type: string
+          nullable: true
+          example: "2026-07-05 12:00:00"
+        created_at:
+          type: string
+          nullable: true
+          example: "2026-07-05 12:00:00"
+
+    PostIndexCreateRequest:
+      type: object
+      required:
+        - post_index
+      properties:
+        post_index:
+          type: string
+          description: Post office postcode. Required field.
+          example: "99999"
+        region_ua:
+          type: string
+          nullable: true
+          example: "ДНІПРОПЕТРОВСЬКА"
+        raion_old_ua:
+          type: string
+          nullable: true
+          example: null
+        raion_new_ua:
+          type: string
+          nullable: true
+          example: null
+        city:
+          type: string
+          nullable: true
+          example: "ДНІПРО"
+        postal_code:
+          type: string
+          nullable: true
+          example: null
+        region_en:
+          type: string
+          nullable: true
+          example: "DNIPROPETROVSKA"
+        raion_new_en:
+          type: string
+          nullable: true
+          example: null
+        settlement:
+          type: string
+          nullable: true
+          example: "DNIPRO"
+        post_office_ua:
+          type: string
+          nullable: true
+          example: "Відділення №1"
+        post_office_en:
+          type: string
+          nullable: true
+          example: "Post office #1"
+
+    PostIndexListResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 50
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/PostIndex"
+
+    PostIndexSingleResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          $ref: "#/components/schemas/PostIndex"
+
+    CreatePostIndexesResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          example: 201
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "Postal codes successfully saved"
+            count:
+              type: integer
+              example: 2
+
+    DeletePostIndexResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "Postal code successfully removed"
+            post_index:
+              type: string
+              example: "99999"
+
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          example: 400
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "Request error"

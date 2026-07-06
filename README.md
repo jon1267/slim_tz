@@ -1,42 +1,78 @@
-# Slim Framework 4 Skeleton Application
+# Приклад тестового завдання:
 
-[![Coverage Status](https://coveralls.io/repos/github/slimphp/Slim-Skeleton/badge.svg?branch=master)](https://coveralls.io/github/slimphp/Slim-Skeleton?branch=master)
+Фреймворк – http://www.slimframework.com/
+Робота з БД через PHP PDO.
+Не можна використовувати жодні інші бібліотеки або ORM.
+Архів поштових індексів - https://www.ukrposhta.ua/files/shares/out/postindex.zip
+Документування API: https://swagger.io/
 
-Use this skeleton application to quickly setup and start working on a new Slim Framework 4 application. This application uses the latest Slim 4 with Slim PSR-7 implementation and PHP-DI container implementation. It also uses the Monolog logger.
+### 1. Спроектувати та створити структуру БД
 
-This skeleton application was built for Composer. This makes setting up a new Slim Framework application quick and easy.
+Як унікальний ключ (ідентифікатор) для всіх операцій використовувати поле 
+"Поштовий індекс відділення зв'язку (Post code of post office)".
+Якщо в архіві поштових індексів поле "Поштовий індекс відділення зв'язку 
+(Post code of post office)" порожнє, ігноруємо запис.
 
-## Install the Application
+### 2. Реалізувати скрипт для автоматичного завантаження поштових індексів (PI).
+- Припускати, що скрипт запускатиметься за розкладом щодня.
+- В даному архіві записів близько 28к, але скрипт повинен бути розрахований на те, що їх може бути значно більше (1млн)
+- Скрипт повинен працювати з memory_limit = 128M, у тому числі і для архіву з 1млн записів
+- Час роботи скрипту, як і навантаження на БД – критичні – чим менше, тим краще.
+Завдання скрипту
+- розпакувати
+- розібрати дані
+- додати відсутні записи до БД
+- оновити змінені записи
+- видалити записи, яких немає в архіві (за винятком доданих через API - див. нижче)
 
-Run this command from the directory in which you want to install your new Slim Framework application. You will require PHP 7.4 or newer.
+### 3. Розробити три API методи:
+- отримання поштових індексів з БД. Параметри відбору:
+- відсутні: повертаємо по 50 записів, з можливістю посторінкової навігації, сортування за індексом, за зростанням
+- вказано поштовий індекс: повертаємо знайдений запис
+- вказана адреса або частина адреси: повертаємо до 50 записів, сортування за адресою, за зростанням
+- додавання поштових індексів (1 або більше)
+- видалення поштових індексів
+Код документуємо у форматі phpdoc (показати приклад), залишаємо в коді коментарі, де це доречно.
 
-```bash
-composer create-project slim/slim-skeleton [my-app-name]
-```
 
-Replace `[my-app-name]` with the desired directory name for your new application. You'll want to:
+### 4. Інсталяція та робота з программой
 
-* Point your virtual host document root to your new application's `public/` directory.
-* Ensure `logs/` is web writable.
+- Клонуйте репозіторій наприклад командой: git clone https://github.com/jon1267/slim_tz.git 
+- Разово запустіть команду composer install (щоб встановити PHP залежности фактично лише міграции robmorgan/phinx)
+- Створить та підключить БД до проекту за допомогою .env файлу. 
+В .env файлі повинни бути такі дані: <br>
+DB_HOST='хост з mysql, можливо: 127.0.0.1'<br>
+DB_NAME='им\'я створеної вами БД'<br>
+DB_USERNAME='ім\'я юзера БД'<br>
+DB_PASSWORD='пароль юзера БД'<br>
+DB_PORT='порт mysql, можливо: 3306'<br><br>
 
-To run the application in development, you can run these commands 
+- Спробуйте запустіть міграциї командой:<br>
+vendor/bin/phinx migrate -e development
+- Якшо міграция відпрацювала без помилок, та створилась пуста таблиця post_indexes
+запустіть импорт індексів поштових відділень України консольною командою:<br>
+php bin/postal-sync.php
 
-```bash
-cd [my-app-name]
-composer start
-```
+- Якшо все пройшло без помилок, в таблице post_indexes з'являться записи.
+- Зараз все готово для API запитів.
+- GET запити, яки ви можете потестити в браузері:<br>
+<http://your-site.local>/api/post-indexes - перша стрінка<br>
+<http://your-site.local>/api/post-indexes?page=2 - друга сторинка и тп<br>
+<http://your-site.local>/api/post-indexes?post_index=49100 - знайти конкретний індекс<br>
+<http://your-site.local>/api/post-indexes?address=Кам%27янське - пошук по адресу (м. Кам'янське)<br>
 
-Or you can use `docker-compose` to run the app with `docker`, so you can run these commands:
-```bash
-cd [my-app-name]
-docker-compose up -d
-```
-After that, open `http://localhost:8080` in your browser.
+- Для POST та DELETE запитів щоб додати, чи видалити дані, треба використати программу тіпа Postman.
 
-Run this command in the application directory to run the test suite
+<br>Додати один индекс:<br>
+curl -X POST "http://localhost:8080/api/post-indexes" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "post_index": "99999",
+    "region_ua": "Дніпропетровська",
+    "city": "Дніпро",
+    "post_office_ua": "Відділення №1"
+  }'
 
-```bash
-composer test
-```
 
-That's it! Now go build something cool.
+Удалить индекс<br>
+curl -X DELETE "<http://your-site.local>/api/post-indexes/99999"

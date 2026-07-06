@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Application\Actions\PostIndex\CreatePostIndexesAction;
+use App\Application\Actions\PostIndex\DeletePostIndexAction;
+use App\Application\Actions\PostIndex\ListPostIndexesAction;
 use App\Application\Actions\User\ListUsersAction;
 use App\Application\Actions\User\ViewUserAction;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -18,6 +21,12 @@ return function (App $app) {
     $app->get('/', function (Request $request, Response $response) {
         $response->getBody()->write('Hello world!');
         return $response;
+    });
+
+    $app->group('/api/post-indexes', function (Group $group) {
+        $group->get('', ListPostIndexesAction::class);
+        $group->post('', CreatePostIndexesAction::class);
+        $group->delete('/{post_index}', DeletePostIndexAction::class);
     });
 
     $app->group('/users', function (Group $group) {

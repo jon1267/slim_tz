@@ -22,7 +22,7 @@ return
             'adapter' => 'mysql',
             'host' => $_ENV['DB_HOST'] ?? 'MySQL-8.0',
             'name' => $_ENV['DB_NAME'] ?? 'slim',
-            'user' => $_ENV['DB_USER'] ?? 'test',
+            'user' => $_ENV['DB_USERNAME'] ?? 'test',
             'pass' => $_ENV['DB_PASSWORD'] ?? 'test',
             'port' => $_ENV['DB_PORT'] ?? '3306',
             'charset' => 'utf8',

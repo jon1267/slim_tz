@@ -4,5 +4,7 @@
 /vendor/
 /logs/*
 .osp/
+/work
 !/logs/README.md
 .phpunit.result.cache
+.env
