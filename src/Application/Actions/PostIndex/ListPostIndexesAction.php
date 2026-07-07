@@ -64,6 +64,8 @@ final class ListPostIndexesAction extends Action
             'page'  => max(1, $page),
             'limit' => 50,
             'items' => $this->repository->findPaginated($page),
+            'total_items' => $this->repository->itemsPagesCount()['total_items'],
+            'total_pages' => $this->repository->itemsPagesCount()['total_pages'],
         ]);
     }
 }

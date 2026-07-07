@@ -23,7 +23,7 @@ class PostalIndexImporter
     public function import(string $zipPath, string $csvFileName): void
     {
         if (!file_exists($zipPath)) {
-            throw new Exception("Архив не найден по пути: {$zipPath}");
+            throw new Exception("Archive not found: {$zipPath}");
         }
 
         // Unique identifier for the current import session

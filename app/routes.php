@@ -23,6 +23,18 @@ return function (App $app) {
         return $response;
     });
 
+    $app->get('/front', function (Request $request, Response $response) {
+        $file = __DIR__ . '/../public/dist/index.html';
+
+        if (file_exists($file)) {
+            $response->getBody()->write(file_get_contents($file));
+            return $response;
+        }
+
+        $response->getBody()->write("Frontend is not build now. Run command 'npm run build'.");
+        return $response;
+    });
+
     $app->group('/api/post-indexes', function (Group $group) {
         $group->get('', ListPostIndexesAction::class);
         $group->post('', CreatePostIndexesAction::class);

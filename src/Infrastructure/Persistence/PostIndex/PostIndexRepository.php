@@ -269,4 +269,20 @@ final class PostIndexRepository
 
         return $stmt->rowCount() > 0;
     }
+
+    /**
+     * Returns the total number of postal codes and the number of pagination pages.
+     *
+     * @return int[]
+     */
+    public function itemsPagesCount(): array
+    {
+        $sql = 'SELECT COUNT(*) FROM post_indexes';
+        $stmt = $this->pdo->query($sql);
+
+        $items = (int) $stmt->fetchColumn();
+        $pages = (int) ceil($items / self::DEFAULT_LIMIT );
+
+        return ['total_items' => $items, 'total_pages' => $pages];
+    }
 }
