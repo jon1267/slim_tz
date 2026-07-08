@@ -14,6 +14,7 @@
   const isModalOpen = ref(false);
   const isSubmitting = ref(false);
   const formError = ref(null);
+  const isEditMode = ref(false); // true - edit, false - add (create)
 
   // Model for the new index form
   const newIndexForm = ref({
@@ -56,7 +57,7 @@
         totalPages.value = 1;
       }
 
-      console.log(totalItems.value, totalPages.value);
+      // console.log(totalItems.value, totalPages.value);
 
     } catch (err) {
       errorMessage.value = err.message || 'Failed to fetch data';
@@ -101,18 +102,33 @@
     }
   };
 
-  // Open / Close modal actions
-  const openModal = () => {
-    // Reset form fields
-    newIndexForm.value = {
-      post_index: '',
-      region_ua: '',
-      city: '',
-      post_office_ua: '',
-      raion_new_ua: '',
-      region_en: '',
-      settlement: ''
-    };
+  // Open / Close modal actions (can accept item for editing)
+  const openModal = (item = null) => {
+    if (item) {
+      isEditMode.value = true;
+      // copy item data to form fields
+      newIndexForm.value = {
+        post_index: item.post_index || '',
+        region_ua: item.region_ua || '',
+        city: item.city || '',
+        post_office_ua: item.post_office_ua || '',
+        raion_new_ua: item.raion_new_ua || '',
+        region_en: item.region_en || '',
+        settlement: item.settlement || ''
+      };
+    } else {
+      isEditMode.value = false;
+      // clear form fields for create new item
+      newIndexForm.value = {
+        post_index: '',
+        region_ua: '',
+        city: '',
+        post_office_ua: '',
+        raion_new_ua: '',
+        region_en: '',
+        settlement: ''
+      };
+    }
     formError.value = null;
     isModalOpen.value = true;
   };
@@ -143,7 +159,14 @@
 
       // If success, close modal and reload the first page of the table
       closeModal();
-      await fetchPostIndexes(1);
+
+      // If we edited an item, stay on the current page; if created new, go to the 1st page
+      if (isEditMode.value) {
+        await fetchPostIndexes(currentPage.value);
+      } else {
+        await fetchPostIndexes(1);
+      }
+
     } catch (err) {
       formError.value = err.message || 'Не вдалося зберегти новий індекс';
     } finally {
@@ -151,9 +174,9 @@
     }
   };
 
-  // Stub to prevent console errors when clicking "Edit" (✎)
+  // "Edit" (click on ✎) item trigger
   const editItem = (item) => {
-    console.log('Редагування індексу:', item);
+    openModal(item);
   };
 
 
@@ -167,7 +190,7 @@
   <div class="index-table-container">
     <div class="table-header">
       <h2>Список поштових індексів України</h2>
-      <button style="padding: 12px 25px; border-radius: 8px; font-weight: 600;" @click="openModal">
+      <button style="padding: 12px 25px; border-radius: 8px; font-weight: 600;" @click="openModal(null)">
         <span> &#10133; </span> Додати Індекс
       </button>
     </div>
@@ -235,11 +258,11 @@
       </div>
     </div>
 
-    <!-- New Index Modal Overlay and Form -->
+    <!-- Index Form Modal Overlay (Unified for Create and Edit) -->
     <div v-if="isModalOpen" class="modal-overlay" @click.self="closeModal">
       <div class="modal-content">
         <div class="modal-header">
-          <h3>Додати новий індекс</h3>
+          <h3>{{ isEditMode ? 'Редагувати індекс' : 'Додати новий індекс' }}</h3>
           <button class="close-modal-btn" @click="closeModal">&times;</button>
         </div>
 
@@ -257,7 +280,12 @@
                 type="text"
                 required
                 placeholder="Наприклад: 99999"
+                :disabled="isEditMode"
+                :title="isEditMode ? 'Індекс не можна змінювати при редагуванні' : ''"
             />
+            <small v-if="isEditMode" style="color: #666; font-size: 11px;">
+              Унікальний індекс не підлягає зміні. Якщо потрібно змінити сам індекс, створіть новий запис.
+            </small>
           </div>
 
           <div class="form-group">
@@ -328,7 +356,7 @@
           <div class="form-actions">
             <button type="button" class="cancel-btn" @click="closeModal">Скасувати</button>
             <button type="submit" class="submit-btn" :disabled="isSubmitting">
-              {{ isSubmitting ? 'Збереження...' : 'Зберегти' }}
+              {{ isSubmitting ? 'Збереження...' : (isEditMode ? 'Зберегти зміни' : 'Зберегти') }}
             </button>
           </div>
         </form>
